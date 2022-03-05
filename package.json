@@ -22,7 +22,9 @@
     "react-native-web": "0.17.1",
     "react-native-screens": "~3.10.1",
     "react-native-safe-area-context": "3.3.2",
-    "react-native-gesture-handler": "~2.1.0"
+    "react-native-gesture-handler": "~2.1.0",
+    "expo-barcode-scanner": "~11.2.0",
+    "expo-camera": "~12.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"

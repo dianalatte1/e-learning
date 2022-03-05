@@ -1,11 +1,50 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { BarCodeScanner } from "expo-barcode-scanner";
+import { Camera, getCameraPermissionsAsync } from "expo-camera";
 
 const TransactionScreen = (props) => {
-  return (
+  // Los permisos de la camara
+  const [hasPermission, setHasPermission] = useState(null);
+  // para saber si es modo escanear o escaneando
+  const [domState, setDomState] = useState("normal");
+  // para saber si el escaneo esta completo
+  const [scanned, setScanned] = useState(false);
+  const [scannedData, setScannedData] = useState("");
+
+  const saveBarcodeData = async ({ type, data }) => {
+    console.log(data); // show the barcode in the terminal
+    setScannedData(data);
+    setDomState("normal");
+    setScanned(true);
+  };
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === "granted");
+      setDomState("scanner");
+    })();
+  }, []);
+
+  if (hasPermission === null) {
+    return <View />;
+  }
+  if (hasPermission === false) {
+    return <Text>No access to camera</Text>;
+  }
+
+  return domState !== "scanner" ? (
     <View style={styles.container}>
-      <Text style={styles.text}>Pantalla de Transaccion</Text>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.text}>Escanear QR</Text>
+      </TouchableOpacity>
     </View>
+  ) : (
+    <BarCodeScanner
+      style={StyleSheet.absoluteFillObject}
+      onBarCodeScanned={scanned ? undefined : saveBarcodeData}
+    />
   );
 };
 const styles = StyleSheet.create({
@@ -13,11 +52,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "blue",
+    backgroundColor: "#54c8ac",
   },
   text: {
     color: "white",
-    fontSize: 30,
+    fontSize: 15,
+  },
+  button: {
+    backgroundColor: "#f49e7e",
+    height: 55,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 15,
+    width: "43%",
   },
 });
 

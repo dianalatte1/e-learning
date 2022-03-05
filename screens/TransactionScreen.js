@@ -13,27 +13,40 @@ const TransactionScreen = (props) => {
   const [scanned, setScanned] = useState(false);
   const [scannedData, setScannedData] = useState("");
 
+  const saveBarcodeData = async ({ type, data }) => {
+    console.log(data); // show the barcode in the terminal
+    setScannedData(data);
+    setDomState("normal");
+    setScanned(true);
+  };
+
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasCameraPermission(status === "granted");
-      // estas dos lineas estan bien?
-      setDomState();
-      setScanned();
+      setHasPermission(status === "granted");
+      setDomState("scanner");
     })();
   }, []);
 
-  return (
+  if (hasPermission === null) {
+    return <View />;
+  }
+  if (hasPermission === false) {
+    return <Text>No access to camera</Text>;
+  }
+
+  return domState !== "scanner" ? (
     <View style={styles.container}>
-      <Text> {hasCameraPermission === false ? scannedData : "Request"}</Text>
-      <TouchableOpacity
-        style={styles.button}
-        // onPress={() => setHasPermission('scanner')} ?????????
-      >
+      <TouchableOpacity style={styles.button}>
         <Text style={styles.text}>Escanear QR</Text>
       </TouchableOpacity>
       )
     </View>
+  ) : (
+    <BarCodeScanner
+      style={StyleSheet.absoluteFillObject}
+      onBarCodeScanned={scanned ? undefined : saveBarcodeData}
+    />
   );
 };
 const styles = StyleSheet.create({

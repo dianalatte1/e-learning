@@ -24,7 +24,6 @@ const TransactionScreen = (props) => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
-      setDomState("scanner");
     })();
   }, []);
 
@@ -37,7 +36,10 @@ const TransactionScreen = (props) => {
 
   return domState !== "scanner" ? (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => setDomState("scanner")}
+      >
         <Text style={styles.text}>Escanear QR</Text>
       </TouchableOpacity>
       )

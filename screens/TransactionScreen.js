@@ -5,37 +5,34 @@ import { Camera, getCameraPermissionsAsync } from "expo-camera";
 
 const TransactionScreen = (props) => {
   // Los permisos de la camara
-  const [hasPermission, setHasPermission] = useState(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState(null);
   // para saber si es modo escanear o escaneando
+  const [hasPermission, setHasPermission] = useState(null);
   const [domState, setDomState] = useState("normal");
   // para saber si el escaneo esta completo
   const [scanned, setScanned] = useState(false);
+  const [scannedData, setScannedData] = useState("");
 
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === "granted");
+      setHasCameraPermission(status === "granted");
       // estas dos lineas estan bien?
       setDomState();
       setScanned();
     })();
   }, []);
 
-  if (hasPermission === null) {
-    return <View />;
-  }
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
-  }
-
   return (
     <View style={styles.container}>
+      <Text> {hasCameraPermission === false ? scannedData : "Request"}</Text>
       <TouchableOpacity
         style={styles.button}
         // onPress={() => setHasPermission('scanner')} ?????????
       >
         <Text style={styles.text}>Escanear QR</Text>
       </TouchableOpacity>
+      )
     </View>
   );
 };

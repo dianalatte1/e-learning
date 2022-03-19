@@ -25,22 +25,27 @@ const TransactionScreen = (props) => {
   const [scannedData, setScannedData] = useState("");
 
   const [studentId, setStudentId] = useState("");
-  const [bookId, setBookId] = useState("");
+  const [bookId, setBookId] = useState(""); // the id of the scanned book
 
   const saveBarcodeData = async ({ type, data }) => {
     console.log(data); // show the barcode in the terminal
-    setScannedData(data);
-    setDomState("normal");
-    setScanned(true);
+    setScannedData(data); // maybe not used anymore
 
-    if (domState === "bookId") {
-      setBookId({ bookId: data, domState: "normal", scanned: true });
-    } else if (domState === "studentId") {
-      setStudentId({
-        studentId: data,
-        domState: "normal",
-        scanned: true,
-      });
+    if (domState === "SCAN_BOOK") {
+      // please scan a book
+      // setBookId({ bookId: data, domState: "normal", scanned: true });
+      setBookId(data);
+      setDomState("normal");
+      setScanned(true);
+    } else if (domState === "SCAN_STUDENT") {
+      // setStudentId({
+      //   studentId: data,
+      //   domState: "normal",
+      //   scanned: true,
+      // });
+      setStudentId(data);
+      setDomState("normal");
+      setScanned(true);
     }
   };
 
@@ -83,10 +88,11 @@ const TransactionScreen = (props) => {
               placeholder={"Id del libro"}
               placeholderTextColor={"#FFFFFF"}
               value={bookId}
+              // onChange={(e) => setBookId(e.target.value)}
             />
             <TouchableOpacity
               style={styles.scanbutton}
-              onPress={() => setDomState("bookId")}
+              onPress={() => setDomState("SCAN_BOOK")}
             >
               <Text style={styles.scanbuttonText}>Escanear</Text>
             </TouchableOpacity>
@@ -97,10 +103,11 @@ const TransactionScreen = (props) => {
               placeholder={"Id del alumno"}
               placeholderTextColor={"#FFFFFF"}
               value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
             />
             <TouchableOpacity
               style={styles.scanbutton}
-              onPress={() => setDomState("studentId")}
+              onPress={() => setDomState("SCAN_STUDENT")}
             >
               <Text style={styles.scanbuttonText}>Escanear</Text>
             </TouchableOpacity>

@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { Camera } from "expo-camera";
+import { collection, getDocs } from "firebase/firestore/lite";
+import db from "../config";
 
 const bgImage = require("../assets/background2.png");
 const appIcon = require("../assets/appIcon.png");
@@ -33,16 +35,10 @@ const TransactionScreen = (props) => {
 
     if (domState === "SCAN_BOOK") {
       // please scan a book
-      // setBookId({ bookId: data, domState: "normal", scanned: true });
       setBookId(data);
       setDomState("normal");
       setScanned(true);
     } else if (domState === "SCAN_STUDENT") {
-      // setStudentId({
-      //   studentId: data,
-      //   domState: "normal",
-      //   scanned: true,
-      // });
       setStudentId(data);
       setDomState("normal");
       setScanned(true);
@@ -53,6 +49,35 @@ const TransactionScreen = (props) => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
+
+      const queryCollection = async (collectionName) => {
+        const myCollection = collection(db, collectionName);
+        const snapshot = await getDocs(myCollection);
+        const list = snapshot.docs.map((doc) => doc.data());
+        return list;
+      };
+
+      const booksList = await queryCollection("books");
+      console.log(booksList);
+
+      const studentsList = await queryCollection("students");
+      console.log(studentsList);
+
+      const transactionsList = await queryCollection("transactions");
+      console.log(transactionsList);
+      /*
+      // indicar en donde buscar y que quieres buscar
+      const studentsCol = collection(db, "students");
+      // query es una consulta
+      // el resultado de la consulta se guarda en snapshot
+      const studentsSnapshot = await getDocs(studentsCol);
+
+      const allDocs = studentsSnapshot.docs;
+      // doc es cada elemento dentro de allDocs
+      // data es un metodo
+      const studentsList = allDocs.map((doc) => doc.data());
+      console.log(studentsList);
+      */
     })();
   }, []);
 
@@ -82,13 +107,14 @@ const TransactionScreen = (props) => {
           <Image source={appName} style={styles.appName} />
         </View>
         <View style={styles.lowerContainer}>
+          {/* este contenedor tendra un textInput y un button */}
           <View style={styles.textinputContainer}>
             <TextInput
               style={styles.textinput}
               placeholder={"Id del libro"}
               placeholderTextColor={"#FFFFFF"}
               value={bookId}
-              // onChange={(e) => setBookId(e.target.value)}
+              onChange={(e) => setBookId(e.target.value)}
             />
             <TouchableOpacity
               style={styles.scanbutton}
@@ -97,6 +123,7 @@ const TransactionScreen = (props) => {
               <Text style={styles.scanbuttonText}>Escanear</Text>
             </TouchableOpacity>
           </View>
+          {/* este contenedor tendra un textInput y un button */}
           <View style={[styles.textinputContainer, { marginTop: 25 }]}>
             <TextInput
               style={styles.textinput}
@@ -114,18 +141,7 @@ const TransactionScreen = (props) => {
           </View>
         </View>
       </ImageBackground>
-      {/* <TouchableOpacity
-        style={styles.button}
-        onPress={() => setDomState("scanner")}
-      >
-        <Text style={styles.text}>Escanear QR</Text>
-      </TouchableOpacity> */}
     </View>
-    // ) : (
-    //   <BarCodeScanner
-    //     style={StyleSheet.absoluteFillObject}
-    //     onBarCodeScanned={scanned ? undefined : saveBarcodeData}
-    //   />
   );
 };
 const styles = StyleSheet.create({

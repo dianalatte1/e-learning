@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { Camera } from "expo-camera";
-import { collection, getDocs } from "firebase/firestore/lite";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore/lite";
 import db from "../config";
 
 const bgImage = require("../assets/background2.png");
@@ -26,8 +26,8 @@ const TransactionScreen = (props) => {
   const [scanned, setScanned] = useState(false);
   const [scannedData, setScannedData] = useState("");
 
-  const [studentId, setStudentId] = useState("");
-  const [bookId, setBookId] = useState(""); // the id of the scanned book
+  const [studentId, setStudentId] = useState("QUbu7OSi3Ygdbb7D6qde");
+  const [bookId, setBookId] = useState("WfXZEwyebawshesfUYnd"); // the id of the scanned book
 
   const saveBarcodeData = async ({ type, data }) => {
     console.log(data); // show the barcode in the terminal
@@ -81,9 +81,32 @@ const TransactionScreen = (props) => {
     })();
   }, []);
 
-  if (hasPermission === null) {
-    return <View />;
-  }
+  const handleTransaction = async () => {
+    const bookRef = doc(db, "books", bookId);
+    const bookSnapshot = await getDoc(bookRef);
+    if (bookSnapshot.exists()) {
+      console.log("Document data:", bookSnapshot.data());
+      let book = bookSnapshot.data().book_details;
+      console.log(book.is_book_available);
+      if (book.is_book_available) {
+        initiateBookIssue();
+      } else {
+        initiateBookReturn();
+      }
+    } else {
+      // doc.data() will be undefined in this case
+      console.log("No such document!");
+    }
+  };
+
+  const initiateBookIssue = () => {
+    console.log("Libro emitido al alumno");
+  };
+
+  const initiateBookReturn = () => {
+    console.log("Libro devuelto a la biblioteca");
+  };
+
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
@@ -139,6 +162,13 @@ const TransactionScreen = (props) => {
               <Text style={styles.scanbuttonText}>Escanear</Text>
             </TouchableOpacity>
           </View>
+          {/* agregando un nuevo button */}
+          <TouchableOpacity
+            style={[styles.button, { marginTop: 25 }]}
+            onPress={handleTransaction}
+          >
+            <Text style={styles.buttonText}>Entregar</Text>
+          </TouchableOpacity>
         </View>
       </ImageBackground>
     </View>
@@ -205,6 +235,20 @@ const styles = StyleSheet.create({
   scanbuttonText: {
     fontSize: 24,
     color: "#0A0101",
+    fontFamily: "Rajdhani_600SemiBold",
+  },
+  // Estilos para nuestro nuevo button Entregar
+  button: {
+    width: "43%",
+    height: 55,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F48D20",
+    borderRadius: 15,
+  },
+  buttonText: {
+    fontSize: 24,
+    color: "#FFFFFF",
     fontFamily: "Rajdhani_600SemiBold",
   },
 });

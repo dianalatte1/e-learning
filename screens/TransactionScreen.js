@@ -10,7 +10,14 @@ import {
 } from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { Camera } from "expo-camera";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore/lite";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  where,
+} from "firebase/firestore/lite";
 import db from "../config";
 
 const bgImage = require("../assets/background2.png");
@@ -27,7 +34,13 @@ const TransactionScreen = (props) => {
   const [scannedData, setScannedData] = useState("");
 
   const [studentId, setStudentId] = useState("QUbu7OSi3Ygdbb7D6qde");
-  const [bookId, setBookId] = useState("WfXZEwyebawshesfUYnd"); // the id of the scanned book
+  const [bookId, setBookId] = useState("WfXZEwyebawshesfUYnd");
+  const [bookName, setBookName] = useState("");
+  const [studentName, setStudentName] = useState("");
+
+  useEffect(() => {
+    console.log({ bookName, studentName });
+  }, [bookName, studentName]);
 
   const saveBarcodeData = async ({ type, data }) => {
     console.log(data); // show the barcode in the terminal
@@ -65,23 +78,14 @@ const TransactionScreen = (props) => {
 
       const transactionsList = await queryCollection("transactions");
       console.log(transactionsList);
-      /*
-      // indicar en donde buscar y que quieres buscar
-      const studentsCol = collection(db, "students");
-      // query es una consulta
-      // el resultado de la consulta se guarda en snapshot
-      const studentsSnapshot = await getDocs(studentsCol);
-
-      const allDocs = studentsSnapshot.docs;
-      // doc es cada elemento dentro de allDocs
-      // data es un metodo
-      const studentsList = allDocs.map((doc) => doc.data());
-      console.log(studentsList);
-      */
     })();
   }, []);
 
   const handleTransaction = async () => {
+    console.log("handleTransaction");
+    await getStudentDetails(studentId);
+    await getBookDetails(bookId);
+
     const bookRef = doc(db, "books", bookId);
     const bookSnapshot = await getDoc(bookRef);
     if (bookSnapshot.exists()) {
@@ -99,8 +103,41 @@ const TransactionScreen = (props) => {
     }
   };
 
+  const getBookDetails = async (bookId) => {
+    const cleanBookId = bookId.trim();
+    console.log(`Query for book_id=${cleanBookId}`);
+    // filtra book_id solo los que coincidan con bookId
+    const q = query(
+      collection(db, "books"),
+      where("book_details.book_id", "==", cleanBookId)
+    );
+    const querySnapshot = await getDocs(q);
+    querySnapshot.docs.map((doc) => {
+      setBookName(doc.data().book_details.book_name);
+    });
+  };
+  const getStudentDetails = async (studentId) => {
+    const cleanStudentId = studentId.trim();
+    console.log(`Query fo student_id=${cleanStudentId}`);
+    const q = query(
+      collection(db, "students"),
+      where("student_details.student_id", "==", cleanStudentId)
+    );
+    const querySnapshot = await getDocs(q);
+    querySnapshot.docs.map((doc) => {
+      setStudentName(doc.data().student_details.student_name);
+    });
+  };
+
   const initiateBookIssue = () => {
     console.log("Libro emitido al alumno");
+    // codigo para agregar una transaccion
+
+    // codigo para cambiar el estado del libro
+
+    // codigo para cambiar el numero de libros emitidos al alumno
+
+    //
   };
 
   const initiateBookReturn = () => {

@@ -7,6 +7,8 @@ import {
   ImageBackground,
   TextInput,
   Image,
+  KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { Camera } from "expo-camera";
@@ -17,6 +19,10 @@ import {
   getDoc,
   query,
   where,
+  addDoc,
+  updateDoc,
+  Timestamp,
+  increment,
 } from "firebase/firestore/lite";
 import db from "../config";
 
@@ -62,7 +68,6 @@ const TransactionScreen = (props) => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === "granted");
-
       const queryCollection = async (collectionName) => {
         const myCollection = collection(db, collectionName);
         const snapshot = await getDocs(myCollection);
@@ -93,20 +98,19 @@ const TransactionScreen = (props) => {
       let book = bookSnapshot.data().book_details;
       console.log(book.is_book_available);
       if (book.is_book_available) {
-        initiateBookIssue();
+        initiateBookIssue(bookId, studentId, bookName, studentName);
+        Alert.alert("Libro emitido al alumno");
       } else {
-        initiateBookReturn();
+        initiateBookReturn(bookId, studentId, bookName, studentName);
+        Alert.alert("Libro devuelto a la biblioteca");
       }
     } else {
-      // doc.data() will be undefined in this case
       console.log("No such document!");
     }
   };
 
   const getBookDetails = async (bookId) => {
     const cleanBookId = bookId.trim();
-    console.log(`Query for book_id=${cleanBookId}`);
-    // filtra book_id solo los que coincidan con bookId
     const q = query(
       collection(db, "books"),
       where("book_details.book_id", "==", cleanBookId)
@@ -118,7 +122,6 @@ const TransactionScreen = (props) => {
   };
   const getStudentDetails = async (studentId) => {
     const cleanStudentId = studentId.trim();
-    console.log(`Query fo student_id=${cleanStudentId}`);
     const q = query(
       collection(db, "students"),
       where("student_details.student_id", "==", cleanStudentId)
@@ -129,19 +132,59 @@ const TransactionScreen = (props) => {
     });
   };
 
-  const initiateBookIssue = () => {
+  const initiateBookIssue = async (
+    bookId,
+    studentId,
+    bookName,
+    studentName
+  ) => {
     console.log("Libro emitido al alumno");
     // codigo para agregar una transaccion
-
+    await addDoc(collection(db, "transactions"), {
+      student_id: studentId,
+      student_name: studentName,
+      book_id: bookId,
+      book_name: bookName,
+      date: Timestamp.now().toDate(),
+      transaction_type: "emitido",
+    });
     // codigo para cambiar el estado del libro
-
+    const issueBook = doc(db, "books/" + bookId);
+    await updateDoc(issueBook, { "book_details.is_book_available": false });
     // codigo para cambiar el numero de libros emitidos al alumno
-
-    //
+    const updateStudent = doc(db, "students/" + studentId);
+    await updateDoc(updateStudent, {
+      number_of_books_issued: increment(1),
+    });
+    //actualizar el estado local
+    setBookId("");
+    setStudentId("");
   };
 
-  const initiateBookReturn = () => {
-    console.log("Libro devuelto a la biblioteca");
+  const initiateBookReturn = async (
+    bookId,
+    studentId,
+    bookName,
+    studentName
+  ) => {
+    // console.log("Libro devuelto a la biblioteca");
+    await addDoc(collection(db, "transactions"), {
+      student_id: studentId,
+      student_name: studentName,
+      book_id: bookId,
+      book_name: bookName,
+      date: Timestamp.now().toDate(),
+      transaction_type: "devuelto",
+    });
+    const returnBook = doc(db, "books/" + bookId);
+    // nested update in firebase
+    await updateDoc(returnBook, { "book_details.is_book_available": true });
+    const updateReturnStudent = doc(db, "students/" + studentId);
+    await updateDoc(updateReturnStudent, {
+      number_of_books_issued: increment(-1),
+    });
+    setBookId("");
+    setStudentId("");
   };
 
   if (hasPermission === false) {
@@ -157,8 +200,7 @@ const TransactionScreen = (props) => {
     );
   }
   return (
-    // return domState !== "scanner" ? (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior="padding" style={styles.container}>
       {/* Agregamos imagen de fondo */}
       <ImageBackground source={bgImage} style={styles.bgImage}>
         <View style={styles.upperContainer}>
@@ -208,7 +250,7 @@ const TransactionScreen = (props) => {
           </TouchableOpacity>
         </View>
       </ImageBackground>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 const styles = StyleSheet.create({

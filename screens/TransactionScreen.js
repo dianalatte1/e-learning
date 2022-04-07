@@ -91,6 +91,30 @@ const TransactionScreen = (props) => {
     await getStudentDetails(studentId);
     await getBookDetails(bookId);
 
+    let transactionType = await checkBookAvailability(bookId);
+    if (!transactionType) {
+      setBookId("");
+      setStudentId("");
+      Alert.alert("Eso no existe");
+    } else if (transactionType === "issue") {
+      let isEligible = await checkStudentEligibilityForBookIssue(studentId);
+
+      if (isEligible) {
+        initiateBookIssue(bookId, studentId, bookName, studentName);
+      }
+
+      Alert.alert("libro emitido al alumno");
+    } else {
+      let isEligible = await checkStudentEligibilityForBookReturn(
+        bookId,
+        studentId
+      );
+      if (isEligible) {
+        initiateBookReturn(bookId, studentId, bookName, studentName);
+      }
+      Alert.alert("libro devuelto a la bibliotea");
+    }
+
     const bookRef = doc(db, "books", bookId);
     const bookSnapshot = await getDoc(bookRef);
     if (bookSnapshot.exists()) {
@@ -186,7 +210,72 @@ const TransactionScreen = (props) => {
     setBookId("");
     setStudentId("");
   };
+  // Esta funcion revisa la disponibilidad del libro
+  const checkBookAvailability = async (bookId) => {
+    const q = query(
+      collection(db, "books"),
+      where("book_details.book_id", "==", bookId)
+    );
+    const querySnapshot = await getDocs(q);
+    let transactionType = "";
+    // cuando el numero de docs es cero
+    if (querySnapshot.docs.length == 0) {
+      transactionType = false;
+    } else {
+      querySnapshot.docs.map((doc) => {
+        transactionType = doc.data().is_book_available ? "issue" : "return";
+      });
+    }
+    return transactionType;
+  };
 
+  const checkStudentEligibilityForBookIssue = async (studentId) => {
+    const s = query(
+      collection(db, "students"),
+      where("student_details.student_id", "==", studentId)
+    );
+    const studentRef = await getDocs(s);
+    let isStudentEligible = "";
+    if (studentRef.docs.length == 0) {
+      setBookId("");
+      setStudentId("");
+      isStudentEligible = false;
+      Alert.alert("el Id del alumno no existe en la base de datos");
+    } else {
+      studentRef.docs.map((doc) => {
+        if (doc.data().number_of_books_issued < 2) {
+          isStudentEligible = true;
+        } else {
+          isStudentEligible = false;
+          Alert.alert("el alumno ya tiene dos libros");
+          setBookId("");
+          setStudentId("");
+        }
+      });
+    }
+    return isStudentEligible;
+  };
+
+  const checkStudentEligibilityForBookReturn = async (bookId, studentId) => {
+    const t = query(
+      collection(db, "transactions"),
+      where("book_id", "==", bookId)
+    );
+    const transactionRef = await getDocs(t);
+    let isStudentEligible = "";
+    transactionRef.docs.map((doc) => {
+      let lastBookTransaction = doc.data();
+      if (lastBookTransaction.student_id === studentId) {
+        isStudentEligible = true;
+      } else {
+        isStudentEligible = false;
+        Alert.alert("El libro no ha sido emitido al alumno");
+        setBookId("");
+        setStudentId("");
+      }
+    });
+    return isStudentEligible;
+  };
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
